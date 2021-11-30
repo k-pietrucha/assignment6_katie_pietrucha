@@ -1,0 +1,100 @@
+---
+title: 'Task 2: Survey responses - political and environmentalist self-identification'
+author: "Katie Pietrucha"
+date: "11/28/2021"
+output: html_document
+---
+
+```{r setup, include = FALSE, warning = FALSE, message = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+
+library(here)
+library(tidyverse)
+library(janitor)
+library(kableExtra)
+library(broom)
+```
+
+## Introduction
+
+## Directions (delete)
+
+Create a simplified version of the survey data to only keep the variables you need for this task, `ENV_ID` and `POL_OR`
+
+```{r}
+# Read in the data
+
+conservation_survey <- read_csv(here("data", "conservation_survey.csv")) %>%
+  clean_names()
+
+# Wrangle
+
+survey_subset <- conservation_survey %>%
+  select("env_id", "pol_or")
+```
+
+
+Add a new column that bins the political party into a binary response of either “conservative” (if POL_OR is 1 - 3) or “liberal” (if POL_OR 5 - 7). All other political affiliations (4, 8, 9) should be excluded for this task. 
+
+```{r}
+# Add new column
+
+survey_subset_full <- survey_subset %>%
+  mutate(pol_or_full = case_when(pol_or %in% c(1:3) ~ "Conservative",
+          pol_or %in% c(5:7) ~ "Liberal")) %>%
+          na.omit()
+```
+
+## Finalized Table of Counts and Proportions
+
+Create a finalized table that shows the counts and proportions of “liberal” and “conservative” survey respondents who responded “Yes”, “No” and “Unsure” to the statement “I consider myself an environmentalist.” Add table caption above.
+
+```{r}
+# Create finalized table
+
+survey_counts <- survey_subset_full %>% 
+  tabyl(pol_or_full, env_id) 
+
+survey_proportions <- survey_counts %>%
+  adorn_percentages() %>% 
+  adorn_pct_formatting(digits = 2) %>% 
+  adorn_ns()
+
+  colnames(survey_proportions) = c(" ", "Yes", "No", "Unsure")
+
+survey_table <- survey_proportions %>%
+  kbl(caption = "<center><strong>Table 1:</strong> Insert caption here.</center>") %>%
+  kable_classic_2(full_width = F) 
+
+survey_table
+
+```
+
+## Contingency Table & Chi-Square
+
+Then, write code to convert the counts table to a contingency table (hint: column_to_rownames()) and perform a chi-square test for independence to answer: is there an association between political affiliation (conservative or liberal-leaning) and if a person considers themself an environmentalist? 
+
+```{r}
+# Create contingency table
+
+survey_ct <- survey_counts %>% 
+  column_to_rownames(var = "pol_or_full")
+```
+
+```{r}
+# Run chi-square
+
+survey_x2 <- chisq.test(survey_ct)
+survey_x2
+
+survey_tidy <- tidy(survey_x2)
+```
+
+
+## Summary of Results
+
+In 2-3 sentences, using in-line referencing to the chi-square test results, describe the results of the statistical test and briefly highlight major takeaways that your reader should learn from your analysis (i.e., you should refer to the actual proportions here).
+
+There is no significant association (i.e. independence) between political orientation and environmentalist self-identification ($\chi$^2^(`r survey_tidy$parameter`)) = `r survey_tidy$statistic`, *p* = `r survey_tidy$p.value`).
+
+## Data Citation
