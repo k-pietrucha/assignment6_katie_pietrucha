@@ -1,0 +1,71 @@
+---
+title: 'TASK 4: Mono Lake Levels Data Visualization'
+author: "Katie Pietrucha"
+date: "12/1/2021"
+output: html_document
+---
+
+```{r setup, include = FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(janitor)
+library(here)
+```
+
+```{r, include = FALSE}
+# Read in the data, clean, and select columns
+
+mono_levels <- read_csv(here("data", "mono_lake_annual_levels.csv"), skip = 5) %>%
+  clean_names() %>%
+  select("year", "lake_level_feet_above_sea_level")
+```
+
+```{r}
+# Visualization
+
+mono_levels %>%
+  ggplot() +
+  geom_line(aes(x = year, y = lake_level_feet_above_sea_level), color = "dodgerblue4") +
+  labs(x = "Year", y = "Lake level (ft above sea level)") +
+  theme_classic() +
+  theme(axis.title.x = element_text(face = "bold")) +
+  theme(axis.title.y = element_text(face = "bold")) +
+  scale_x_continuous(breaks = seq(from = 1850, to = 2017, by = 20)) +
+  scale_y_continuous(limits = c(6370, 6430), 
+                     breaks = c(6370, 6380, 6390, 6400, 6410, 6420, 6430, 6440)) +
+  geom_hline(yintercept = 6392, color = "turquoise3", linetype = "twodash") +
+  annotate("text", x = 1865.5, y = 6394, 
+           label = "1998 mandated level (6392 ft)", color = "turquoise3", size = 3) +
+  geom_hline(yintercept = 6377, 
+             color = "tan3", linetype = "longdash") +
+  annotate("text", x = 1866, y = 6379, 
+           label = "Land bridges emerge (6377 ft)", color = "tan3", size = 3) +
+  geom_ribbon(data = mono_levels %>% 
+              filter(lake_level_feet_above_sea_level < 6392), 
+              aes(x = year, ymin = lake_level_feet_above_sea_level, ymax = 6392), 
+              fill = "red3", alpha = 0.4) +
+   annotate("segment", x = 1942, xend = 1941, 
+           y = 6421, yend = 6417,
+           color = "gray34", size = 0.5) +
+  annotate("text", x = 1960, y = 6422.5, 
+           size = 3, label = "LA DWP diversion begins", color = "gray34") +
+   annotate("segment", x = 1995, xend = 1994, 
+            y = 6371, yend = 6375,
+           colour = "gray34", size = 0.5) +
+  annotate("text", x = 2000, y = 6370, 
+           size = 3, label = "Decision 1631", color = "gray34") +
+  annotate("segment", x = 1976, xend = 1981, 
+           y = 6370, yend = 6372.30,
+           colour = "gray34", size = 0.5) +
+  annotate("text", x = 1958, y = 6370, 
+           size = 3, label = "State Reserve created", color = "gray34") +
+   annotate("segment", x = 2001, xend = 1998, 
+           y = 6380, yend = 6384,
+           colour = "gray34", 
+           size = 0.5) +
+  annotate("text", x = 2005, y = 6379, 
+           size = 2, label = "Restoration orders", color = "gray34")
+```
+
+**Figure 1:** This graph shows the Mono Lake level (in feet above sea level) from 1850 to 2017. A steep decrease is seen after 1941, when the Los Angeles Department of Water and Power began diverting water from the lake's tributaries. The water level dropped 45 feet until 1981 when the Mono Lake Tufa State Natural Reserve was established. In 1994, the State Water Board issued Decision 1631, which mandated a minimum lake level of 6392 ft needed for habitat restoration. This decision did result in a rise in the level of the lake, but unfortunately, the mandated minimum level (shown by the blue horizontal line) has not yet been achieved. The red-shaded area on the graph represents the lake level below this minimum threshold, where it has been since about 1965. The tan horizontal line represents the level at which land bridges form to islands within the lake, allowing predators to access the waterfowl nesting areas. A level below 6360 ft (not shown) would result in a salinity that would decrease the brine shrimp population, further hurting migrating birds that depend on the lake for a food source. 

@@ -1,8 +1,10 @@
 ---
-title: 'Task 3: Lizard Lengths'
+title: 'Task 3: Female Lizard Lengths'
 author: "Katie Pietrucha"
-date: "11/29/2021"
-output: html_document
+date: "12/01/2021"
+output:
+  html_document:
+    theme: yeti
 ---
 
 ```{r setup, include = FALSE, warning = FALSE, message = FALSE}
@@ -13,78 +15,73 @@ library(here)
 library(paletteer)
 library(kableExtra)
 library(effsize)
+library(broom)
 ```
 
 ## Introduction
 
-Add a 2 - 3 sentence mini-introduction describing the data, the question you’re answering, and the method you’ll use
+This project explores lizard pitfall trap data from the Jornada Basin LTER in New Mexico. The analysis investigates the difference in total body length between female lizards of two species -- the Colorado Checkered lizard (*Cnemidophorus tessalatus*) and the Desert Grassland lizard (*Cnemidophorus uniparens*) -- using a two-sample t-test and Cohen's d effect size.
 
-## Directions (delete)
-
-```{r}
+```{r, include = FALSE}
 # Read in the data
 
 lizards <- read_csv(here("data", "lizards.csv"))
 
-# Simplify data frame and filter for female CNUN and CNTE lizards
+# Simplify data frame, selecting variables for species, sex, and total length, and filtering for female CNUN and CNTE lizard observations.
 
 lizards_subset <- lizards %>%
   select(spp, sex, total_length) %>%
   filter(sex == "F", spp %in% c("CNUN", "CNTE"))
 ```
 
-## Finalized Figure
-
-Create a finalized visualization comparing total lengths of female lizards for the two species. Include a figure caption below it.
+## Results
 
 ```{r}
+# Finalized visualization comparing total lengths of female lizards for the two species.
+
 lizards_subset %>%
   ggplot(aes(x = total_length, y = spp)) +
   geom_boxplot(lwd = 0.5, aes(color = spp)) +
   geom_jitter(aes(color = spp), alpha = 0.5, cex = 2) +
   theme_bw() +
-  scale_color_paletteer_d("suffrager::classic") +
-  labs(x = "Total length (mm)", y = "Species", caption = "Figure 1. Insert Caption here.") +
-  scale_color_discrete(name = "Lizard Species", labels = c("Colorado Checkered
+  labs(x = "Total length (mm)", y = "Species", caption = "Figure 1: Comparison of total length (mm) between females of two New Mexico lizard species. Each point is a single 
+observation. Box endpoints indicate the 25th and 75th percentile values; the bolded line within each box indicates 
+the mean value for each species. Mean length is higher for the Colorado Checkered lizard (C. tessalatus) than the 
+Desert Grassland lizard (C. uniparens) (Lightfoot 2017).") +
+  scale_color_manual(values = c("lightsteelblue4", "olivedrab4"), name = "Lizard Species", labels = c("Colorado Checkered
   (C. tessalatus)", 
   "Desert Grassland
   (C. uniparens)")) +
-  theme(legend.title.align=0.5) +
+  theme(legend.title.align = 0.5) +
   theme(axis.title.y = element_blank(),
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank()) +
   theme(legend.position = "bottom") +
   theme(legend.text = element_text(face = "italic")) +
   theme(plot.caption = element_text(hjust = 0))
-  
 ```
 
-## Finalized Summary Table
-
-Prepare a finalized summary table that contains the mean and standard deviation for total length, and sample size, for each group (female CNUN and CNTE lizards)
-
 ```{r}
-lizards_table <- lizards_subset %>%
+# Finalized summary table with mean, standard deviation, and sample size.
+
+lizards_stats <- lizards_subset %>%
   group_by(spp) %>%
   drop_na() %>%
   summarize(mean = round(mean(total_length), 2),
             sd = round(sd(total_length), 2),
-            n = n()) %>%
+            n = n()) 
+
+lizards_table <- lizards_stats %>%
   mutate(spp = c("Colorado Checkered
   (C. tessalatus)", "Desert Grassland
   (C. uniparens)")) %>%
-  kbl(col.names = c("Lizard Species", "Mean Total Length (mm)", "Standard Deviation (mm)", "Sample Size")) %>%
-  kable_classic(full_width = F)
+  kbl(col.names = c("Lizard Species", "Mean Total Length (mm)", "Standard Deviation (mm)", "Sample Size"), caption = "<center><strong>Table 1:</strong> Mean total length (mm), standard deviation (mm) and sample size for female lizards of two species (Lightfoot 2017).</center>") %>%
+  kable_classic(full_width = F, position = "left")
 
 lizards_table
 ```
 
-
-## Summary Statement
-
-Answer: is there a significant difference in total length difference in mean total length between female lizards for the two species? Note: you should do exploratory analyses (e.g. histograms, QQ-plots) to determine if assumptions of a hypothesis test you decide on are appropriate, and include code used to do that, even though it won’t show up in your knitted document. 
-
-```{r}
+```{r, include = FALSE}
 
 # Exploratory histogram
 ggplot(data = lizards_subset) +
@@ -93,9 +90,11 @@ ggplot(data = lizards_subset) +
 # Exploratory q-q plot
 ggplot(data = lizards_subset) +
   geom_qq(aes(sample = total_length))
+
+#Distribution looks fairly normal
 ```
 
-```{r}
+```{r, include = FALSE}
 # T-test
 cnun_sample <- lizards_subset %>% 
   filter(spp == "CNUN") %>% 
@@ -107,20 +106,22 @@ cnte_sample <- lizards_subset %>%
   drop_na() %>%
   pull(total_length)
 
-t.test(cnte_sample, cnun_sample)
+lizard_t <- t.test(cnte_sample, cnun_sample)
+
+t_tidy <- tidy(lizard_t)
 ```
 
-
-Find the effect size (Cohen’s d) of the difference between means for the two species.
-
-```{r}
+```{r, include = FALSE}
 # Find effect size (Cohen's d)
 
 lizards_cohen <- cohen.d(cnte_sample, cnun_sample)
 
 lizards_cohen
 ```
+## Analysis
 
+The mean total length for the female Colorado Checkered lizard was `r lizards_stats$mean[1]` +/- `r lizards_stats$sd[1]` mm, and the mean total length for the female Desert Grassland lizard was `r lizards_stats$mean[2]` +/- `r lizards_stats$sd[2]`  mm. The effect size is large (`r round(lizards_cohen$estimate, 2)`) and the difference significant (two-sample t-test: t = `r round(t_tidy[4], 2)`, p < 0.001).
 
 ## Data Citation
 
+Lightfoot, D. 2017. Lizard pitfall trap data (LTER-II, LTER-III) ver 36. Environmental Data Initiative. https://doi.org/10.6073/pasta/ff37b4cace16a9943575f3fd7067064e 
